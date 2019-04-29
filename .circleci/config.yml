@@ -27,7 +27,7 @@ jobs:
           command: |
             pin_name="$DOMAIN build $CIRCLE_BUILD_NUMBER"
 
-            hash=$(pin-to-cluster.sh "$pin_name" /tmp/workspace/$BUILD_DIR)
+            hash=$(pin-to-cluster.sh "$pin_name" $BUILD_DIR)
 
             echo "Website added to IPFS: https://ipfs.io/ipfs/$hash"
 
