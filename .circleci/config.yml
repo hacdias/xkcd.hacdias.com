@@ -15,7 +15,7 @@ jobs:
           command: |
             sudo apt install jq
             curl https://dist.ipfs.io/go-ipfs/v0.4.20/go-ipfs_v0.4.20_linux-amd64.tar.gz -o ipfs.tar.gz
-            tar -xvfz ipfs.tar.gz
+            tar -xvf ipfs.tar.gz
             sudo cp go-ipfs/ipfs /usr/local/bin
       - run:
           name: Init ipfs daemon
