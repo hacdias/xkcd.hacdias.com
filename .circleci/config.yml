@@ -40,7 +40,7 @@ jobs:
             pin_name="$SUBDOMAIN build $CIRCLE_BUILD_NUMBER"
 
             for file in $BUILD_DIR; do
-              hash=$(ipfs add --only-hash Cucu -q -r)
+              hash=$(ipfs add --only-hash $file -q -r)
 
               if ! ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD pin add $hash -w -wt 10s; then
                 ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD add -Q -r $file
