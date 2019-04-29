@@ -30,9 +30,11 @@ jobs:
           command: |
             pin_name="$SUBDOMAIN build $CIRCLE_BUILD_NUMBER"
 
-            hash=$(ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io \
+            ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io \
               --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD \
-              add --rmin 1 --rmax 1 -Q -r $BUILD_DIR)
+              add --rmin 1 --rmax 1 -r $BUILD_DIR | tee out.txt
+
+            hash=$(cat out.txt | tail -1 | sed 's/added//' | sed "s/$BUILD_DIR//" | xargs)
 
             echo "Added, gonna pin"
 
