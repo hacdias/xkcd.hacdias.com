@@ -11,8 +11,17 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run:
-          name: Install JQ
-          command: sudo apt install jq
+          name: Install dependencies
+          command: |
+            sudo apt install jq
+            curl https://dist.ipfs.io/go-ipfs/v0.4.20/go-ipfs_v0.4.20_linux-amd64.tar.gz -o ipfs.tar.gz
+            tar -xvfz ipfs.tar.gz
+            sudo cp go-ipfs/ipfs /usr/local/bin
+      - run:
+          name: Init ipfs daemon
+          command: |
+            ipfs init
+            ipfs daemon &
       - run:
           name: Fetch latest version of archive
           command: |
@@ -23,7 +32,6 @@ jobs:
             tar -xvf output.tar.gz
 
             mv $latest $BUILD_DIR
-
             npx xkcd-clone -d $BUILD_DIR
       - run:
           name: Pin website, post notification for PRs or update DNS on master
@@ -31,13 +39,28 @@ jobs:
           command: |
             pin_name="$SUBDOMAIN build $CIRCLE_BUILD_NUMBER"
 
-            hash=$(pin-to-cluster.sh "$pin_name" $BUILD_DIR)
+            for file in $BUILD_DIR; do
+              hash=$(ipfs add --only-hash Cucu -q -r)
 
-            echo "Website added to IPFS: https://ipfs.io/ipfs/$hash"
+              if ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD pin add $hash -w -wt 10s; then
+                # do nothing
+              else
+                ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD add -Q -r $file
+              fi
 
-            if [ "$CIRCLE_BRANCH" == "master" ] ; then
-              npx dnslink-cloudflare -d $DOMAIN -r _dnslink.xkcd -l /ipfs/$hash
-            fi
+              echo $hash
+            done
+
+            # hash=$(pin-to-cluster.sh "$pin_name" $BUILD_DIR)
+
+            # echo "Website added to IPFS: https://ipfs.io/ipfs/$hash"
+
+            # if [ "$CIRCLE_BRANCH" == "master" ] ; then
+             #  npx dnslink-cloudflare -d $DOMAIN -r _dnslink.xkcd -l /ipfs/$hash
+            # fi
+        - run:
+            name: Kill IPFS
+            command: sudo killall ipfs
 workflows:
   version: 2
   publish:
