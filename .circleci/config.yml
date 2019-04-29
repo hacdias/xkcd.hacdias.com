@@ -4,7 +4,8 @@ jobs:
     docker:
       - image: olizilla/ipfs-dns-deploy:1.2
         environment:
-          DOMAIN: xkcd.hacdias.com
+          SUBDOMAIN: xkcd.hacdias.com
+          DOMAIN: hacdias.com
           BUILD_DIR: output
     steps:
       - attach_workspace:
@@ -15,24 +16,26 @@ jobs:
       - run:
           name: Fetch latest version of archive
           command: |
-            latest=$(curl -s "https://ipfs.io/api/v0/dns?arg=$DOMAIN" | jq -r '.Path')
+            latest=$(curl -s "https://ipfs.io/api/v0/dns?arg=$SUBDOMAIN" | jq -r '.Path')
             latest=$(echo $latest | sed 's/\/ipfs\///')
 
             curl "https://ipfs.io/api/v0/get?arg=$latest&archive=true&compress=true" -o output.tar.gz
             tar -xvf output.tar.gz
 
             mv $latest $BUILD_DIR
+
+            npx xkcd-clone -d $BUILD_DIR
       - run:
           name: Pin website, post notification for PRs or update DNS on master
           command: |
-            pin_name="$DOMAIN build $CIRCLE_BUILD_NUMBER"
+            pin_name="$SUBDOMAIN build $CIRCLE_BUILD_NUMBER"
 
             hash=$(pin-to-cluster.sh "$pin_name" $BUILD_DIR)
 
             echo "Website added to IPFS: https://ipfs.io/ipfs/$hash"
 
             if [ "$CIRCLE_BRANCH" == "master" ] ; then
-              npx dnslink-cloudflare -d $DOMAIN -r _dnslink -l /ipfs/$hash
+              npx dnslink-cloudflare -d $DOMAIN -r _dnslink.xkcd -l /ipfs/$hash
             fi
 workflows:
   version: 2
