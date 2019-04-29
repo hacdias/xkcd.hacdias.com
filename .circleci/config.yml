@@ -4,33 +4,61 @@ jobs:
     docker:
       - image: olizilla/ipfs-dns-deploy:1.2
         environment:
-          DOMAIN: xkcd.hacdias.com
+          SUBDOMAIN: xkcd.hacdias.com
+          DOMAIN: hacdias.com
           BUILD_DIR: output
     steps:
       - attach_workspace:
           at: /tmp/workspace
       - run:
-          name: Install JQ
+          name: Install jq
           command: sudo apt install jq
       - run:
           name: Fetch latest version of archive
           command: |
-            latest=$(curl -s "https://ipfs.io/api/v0/dns?arg=$DOMAIN" | jq -r '.Path')
-            npx ipfs-or-gateway -c $latest -p $BUILD_DIR
+            latest=$(curl -s "https://ipfs.io/api/v0/dns?arg=$SUBDOMAIN" | jq -r '.Path')
+            latest=$(echo $latest | sed 's/\/ipfs\///')
+
+            curl "https://ipfs.io/api/v0/get?arg=$latest&archive=true&compress=true" -o output.tar.gz
+            tar -xvf output.tar.gz
+
+            mv $latest $BUILD_DIR
+            npx xkcd-clone -d $BUILD_DIR
       - run:
           name: Pin website, post notification for PRs or update DNS on master
+          no_output_timeout: 60m
           command: |
-            pin_name="$DOMAIN build $CIRCLE_BUILD_NUMBER"
+            pin_name="$SUBDOMAIN build $CIRCLE_BUILD_NUMBER"
 
-            hash=$(pin-to-cluster.sh "$pin_name" /tmp/workspace/$BUILD_DIR)
+            hash=$(ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io \
+              --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD \
+              add --rmin 1 --rmax 1 -Q -r $BUILD_DIR)
+
+            echo "Added, gonna pin"
+
+            ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io \
+              --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD \
+              pin add $hash -w -wt 30m
 
             echo "Website added to IPFS: https://ipfs.io/ipfs/$hash"
 
             if [ "$CIRCLE_BRANCH" == "master" ] ; then
-              npx dnslink-cloudflare -d $DOMAIN -r _dnslink -l /ipfs/$hash
+              npx dnslink-cloudflare -d $DOMAIN -r _dnslink.xkcd -l /ipfs/$hash
             fi
 workflows:
   version: 2
-  publish:
+  update:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
     jobs:
-      - deploy
+      - deploy:
+          context: IPFS Pinning
+  deploy:
+    jobs:
+      - deploy:
+          context: IPFS Pinning
