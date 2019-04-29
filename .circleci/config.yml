@@ -42,12 +42,11 @@ jobs:
             for file in $BUILD_DIR; do
               hash=$(ipfs add --only-hash Cucu -q -r)
 
-              if ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD pin add $hash -w -wt 10s; then
-                # do nothing
-              else
+              if ! ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD pin add $hash -w -wt 10s; then
                 ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD add -Q -r $file
               fi
 
+              ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD pin add $hash -w -wt 30s
               echo $hash
             done
       - run:
