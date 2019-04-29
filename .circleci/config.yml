@@ -18,11 +18,6 @@ jobs:
             tar -xvf ipfs.tar.gz
             sudo cp go-ipfs/ipfs /usr/local/bin
       - run:
-          name: Init ipfs daemon
-          command: |
-            ipfs init
-            ipfs daemon &
-      - run:
           name: Fetch latest version of archive
           command: |
             latest=$(curl -s "https://ipfs.io/api/v0/dns?arg=$SUBDOMAIN" | jq -r '.Path')
@@ -37,6 +32,10 @@ jobs:
           name: Pin website, post notification for PRs or update DNS on master
           no_output_timeout: 60m
           command: |
+            echo "Init and start ipfs"
+            ipfs init
+            ipfs daemon &
+
             pin_name="$SUBDOMAIN build $CIRCLE_BUILD_NUMBER"
             hash=$(ipfs add $BUILD_DIR -q -r)
 
@@ -51,6 +50,8 @@ jobs:
             if [ "$CIRCLE_BRANCH" == "master" ] ; then
               npx dnslink-cloudflare -d $DOMAIN -r _dnslink.xkcd -l /ipfs/$hash
             fi
+
+            sudo killall ipfs
 workflows:
   version: 2
   publish:
