@@ -33,4 +33,6 @@ workflows:
   version: 2
   publish:
     jobs:
-      - deploy
+      - deploy:
+          context: IPFS Pinning
+
