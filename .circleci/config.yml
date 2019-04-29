@@ -32,15 +32,9 @@ jobs:
 
             ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io \
               --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD \
-              add --rmin 1 --rmax 1 -r $BUILD_DIR | tee out.txt
+              add -r $BUILD_DIR | tee out.txt
 
             hash=$(cat out.txt | tail -1 | sed 's/added//' | sed "s/$BUILD_DIR//" | xargs)
-
-            echo "Added, gonna pin"
-
-            ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io \
-              --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD \
-              pin add $hash -w -wt 30m
 
             echo "Website added to IPFS: https://ipfs.io/ipfs/$hash"
 
