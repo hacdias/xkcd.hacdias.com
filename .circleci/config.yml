@@ -33,6 +33,7 @@ jobs:
           no_output_timeout: 60m
           command: |
             echo "Init and start ipfs"
+            IPFS_PATH=ipfsrepo
             ipfs init
             ipfs daemon &
 
