@@ -50,17 +50,9 @@ jobs:
 
               echo $hash
             done
-
-            # hash=$(pin-to-cluster.sh "$pin_name" $BUILD_DIR)
-
-            # echo "Website added to IPFS: https://ipfs.io/ipfs/$hash"
-
-            # if [ "$CIRCLE_BRANCH" == "master" ] ; then
-             #  npx dnslink-cloudflare -d $DOMAIN -r _dnslink.xkcd -l /ipfs/$hash
-            # fi
-        - run:
-            name: Kill IPFS
-            command: sudo killall ipfs
+      - run:
+          name: Kill IPFS
+          command: sudo killall ipfs
 workflows:
   version: 2
   publish:
