@@ -16,7 +16,12 @@ jobs:
           name: Fetch latest version of archive
           command: |
             latest=$(curl -s "https://ipfs.io/api/v0/dns?arg=$DOMAIN" | jq -r '.Path')
-            npx ipfs-or-gateway -c $latest -p $BUILD_DIR
+            latest=$(echo $latest | sed 's/\/ipfs\///')
+
+            curl "https://ipfs.io/api/v0/get?arg=$latest&archive=true&compress=true" -o output.tar.gz
+            tar -xvf output.tar.gz
+
+            mv $latest $BUILD_DIR
       - run:
           name: Pin website, post notification for PRs or update DNS on master
           command: |
