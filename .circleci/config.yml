@@ -38,14 +38,19 @@ jobs:
           no_output_timeout: 60m
           command: |
             pin_name="$SUBDOMAIN build $CIRCLE_BUILD_NUMBER"
-            hash=$(ipfs add --only-hash $BUILD_DIR -q -r)
+            hash=$(ipfs add $BUILD_DIR -q -r)
+
+            echo "Got hash: $hash, will pin"
+
             ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io \
               --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD \
               pin add $hash -w -wt 30m
-            echo "Pinned $hash"
-      - run:
-          name: Kill IPFS
-          command: sudo killall ipfs
+
+            echo "Website added to IPFS: https://ipfs.io/ipfs/$hash"
+
+            if [ "$CIRCLE_BRANCH" == "master" ] ; then
+              npx dnslink-cloudflare -d $DOMAIN -r _dnslink.xkcd -l /ipfs/$hash
+            fi
 workflows:
   version: 2
   publish:
