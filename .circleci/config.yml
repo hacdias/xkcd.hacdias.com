@@ -27,7 +27,7 @@ jobs:
             npx xkcd-clone -d $BUILD_DIR
       - run:
           name: Pin website, post notification for PRs or update DNS on master
-          no_output_timeout: 30m
+          no_output_timeout: 60m
           command: |
             pin_name="$SUBDOMAIN build $CIRCLE_BUILD_NUMBER"
 
