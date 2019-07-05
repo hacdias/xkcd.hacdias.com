@@ -13,17 +13,16 @@ jobs:
       - run:
           name: Install jq
           command: sudo apt install jq
+      - restore_cache:
+          keys:
+            - xkcd-v1
       - run:
           name: Fetch latest version of archive
-          command: |
-            latest=$(curl -s "https://ipfs.io/api/v0/dns?arg=$SUBDOMAIN" | jq -r '.Path')
-            latest=$(echo $latest | sed 's/\/ipfs\///')
-
-            curl "https://ipfs.io/api/v0/get?arg=$latest&archive=true&compress=true" -o output.tar.gz
-            tar -xvf output.tar.gz
-
-            mv $latest $BUILD_DIR
-            npx xkcd-clone -d $BUILD_DIR
+          command: npx xkcd-clone -d $BUILD_DIR
+      - save_cache:
+          key: xkcd-v1
+          paths:
+            - output # Must be equal to BUILD_DIR
       - run:
           name: Pin website, post notification for PRs or update DNS on master
           no_output_timeout: 60m
