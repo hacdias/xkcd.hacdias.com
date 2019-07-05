@@ -15,12 +15,12 @@ jobs:
           command: sudo apt install jq
       - restore_cache:
           keys:
-            - xkcd
+            - xkcd-v1
       - run:
           name: Fetch latest version of archive
           command: npx xkcd-clone -d $BUILD_DIR
       - save_cache:
-          key: xkcd
+          key: xkcd-v1
           paths:
             - output # Must be equal to BUILD_DIR
       - run:
