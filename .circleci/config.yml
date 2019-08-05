@@ -44,8 +44,8 @@ workflows:
                 - master
     jobs:
       - deploy:
-          context: IPFS Pinning
+          context: ipfs-deploy
   deploy:
     jobs:
       - deploy:
-          context: IPFS Pinning
+          context: ipfs-deploy
