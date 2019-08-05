@@ -2,10 +2,10 @@ version: 2
 jobs:
   deploy:
     docker:
-      - image: olizilla/ipfs-dns-deploy:1.2
+      - image: circleci/node:12
         environment:
-          SUBDOMAIN: xkcd.hacdias.com
-          DOMAIN: hacdias.com
+          IPFS_DEPLOY_CLOUDFLARE__ZONE: hacdias.com
+          IPFS_DEPLOY_CLOUDFLARE__RECORD: _dnslink.xkcd.hacdias.com
           BUILD_DIR: output
     steps:
       - attach_workspace:
@@ -27,25 +27,10 @@ jobs:
           name: Pin website, post notification for PRs or update DNS on master
           no_output_timeout: 60m
           command: |
-            pin_name="$SUBDOMAIN build $CIRCLE_BUILD_NUMBER"
-
-            ipfs-cluster-ctl --host /dnsaddr/cluster.ipfs.io \
-              --basic-auth $CLUSTER_USER:$CLUSTER_PASSWORD \
-              add -r $BUILD_DIR | tee out.txt
-
-            hash=$(cat out.txt | tail -1 | sed 's/added//' | sed "s/$BUILD_DIR//" | xargs)
-
-            echo "Website added to IPFS: https://ipfs.io/ipfs/$hash"
-
             if [ "$CIRCLE_BRANCH" == "master" ] ; then
-              curl -X POST \
-                -H "Content-Type: application/json" \
-                -H "pinata_api_key: $PINATA_API" \
-                -H "pinata_secret_api_key: $PINATA_SECRET" \
-                -d "{\"hashToPin\":\"$hash\"}" \
-                https://api.pinata.cloud/pinning/addHashToPinQueue
-
-              npx dnslink-cloudflare -d $DOMAIN -r _dnslink.xkcd -l /ipfs/$hash
+              npx ipfs-deploy $BUILD_DIR -C -O -u ipfs-cluster -p pinata -d cloudflare
+            else
+              npx ipfs-deploy $BUILD_DIR -C -O -u ipfs-cluster -p pinata
             fi
 workflows:
   version: 2
@@ -59,8 +44,8 @@ workflows:
                 - master
     jobs:
       - deploy:
-          context: IPFS Pinning
+          context: ipfs-deploy
   deploy:
     jobs:
       - deploy:
-          context: IPFS Pinning
+          context: ipfs-deploy
