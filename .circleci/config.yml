@@ -27,6 +27,9 @@ jobs:
           name: Pin website, post notification for PRs or update DNS on master
           no_output_timeout: 60m
           command: |
+            echo "User-agent: *
+            Disallow: /" > $BUILD_DIR/robots.txt
+
             if [ "$CIRCLE_BRANCH" == "master" ] ; then
               # npx ipfs-deploy $BUILD_DIR -C -O -u ipfs-cluster -p pinata -d cloudflare
               npx ipfs-deploy $BUILD_DIR -C -O -u pinata -p ipfs-cluster -d cloudflare
